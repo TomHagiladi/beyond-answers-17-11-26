@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="description" content="Beyond Answers - a creative question generator for the ICHTE workshop, Levinsky-Wingate, 17.11.2026">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: file:; connect-src https://*.workers.dev https://firestore.googleapis.com; base-uri 'none'; form-action 'none'">
+<title>Beyond Answers</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%237a0572'/%3E%3Ctext x='32' y='47' font-size='44' font-family='Georgia,serif' font-weight='700' fill='white' text-anchor='middle'%3E%3F%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400..700&family=Rubik:wght@400..700&display=swap" rel="stylesheet">
+<style>
+  /* Signature move: the question mark. It draws itself on the opening screen and while the model
+     thinks, then the six questions are dealt like cards. Everything else stays quiet around it.
+     References: Oblique Strategies (one card per draw), Linear (small caps eyebrow labels, here
+     echoing the labels on Amnon's slide 13), and the ICHTE banner gradient (palette). */
+  :root {
+    --ink: #2a0a30;
+    --plum: #620067;
+    --brand: #7a0572;
+    --brand-hover: #93066c;
+    --accent: #b8127e;
+    --paper: #fcf8fb;
+    --card: #ffffff;
+    --line: #eadbe7;
+    --tint: #f6e9f3;
+    --muted: #5f4a63;
+    --ok: #1e6b3a;
+    --focus: #b45309;
+    --font-ui: "Rubik", "Segoe UI", system-ui, sans-serif;
+    --font-q: "Frank Ruhl Libre", Georgia, "Times New Roman", serif;
+    --radius: 16px;
+    --space-sm: .5rem;
+    --space-md: 1rem;
+    --space-lg: 2rem;
+    --ease: cubic-bezier(.2, .7, .2, 1);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { margin: 0; font-family: var(--font-ui); color: var(--ink); background: var(--paper); line-height: 1.55; font-size: 1rem; }
+  img { max-width: 100%; height: auto; }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  [hidden] { display: none !important; }
+
+  .skip-link { position: absolute; top: -100%; inset-inline-start: 0; background: var(--brand); color: #fff; padding: .75rem 1.5rem; font-weight: 700; z-index: 200; text-decoration: none; }
+  .skip-link:focus { top: 0; outline: 3px solid var(--focus); outline-offset: 2px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 6px; }
+
+  .testbar { background: #fff1bf; color: #4d3a00; text-align: center; padding: .5rem 1rem; font-size: .9rem; font-weight: 500; }
+
+  .band { background: linear-gradient(118deg, #4d0052 0%, var(--brand) 55%, var(--brand-hover) 100%); color: #fff; display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); padding: .75rem 1rem; }
+  .band .logo { height: 40px; width: auto; display: block; }
+  .langbtn { background: transparent; color: #fff; border: 1.5px solid rgba(255, 255, 255, .75); border-radius: 999px; min-height: 44px; padding: .35rem 1rem; font-weight: 600; }
+  .langbtn:hover { background: rgba(255, 255, 255, .14); }
+  .langbtn:focus-visible { outline-color: #ffd28a; }
+
+  main { max-width: 640px; margin: 0 auto; padding: 1.25rem 1rem 2.5rem; }
+  /* headings get focus from code (for screen readers), not from the keyboard - no ring on them */
+  .screen [tabindex="-1"]:focus, .screen [tabindex="-1"]:focus-visible { outline: none; }
+  .eyebrow { font-size: .78rem; letter-spacing: .07em; font-weight: 600; color: var(--accent); margin: 0 0 .35rem; }
+  .eyebrow-en { font-family: var(--font-ui); letter-spacing: .08em; text-transform: uppercase; }
+
+  /* welcome */
+  .hero { text-align: center; padding-top: .5rem; }
+  .qmark { display: block; margin: 0 auto; }
+  .hero .qmark { width: clamp(110px, 34vw, 170px); height: auto; }
+  .qmark .stroke { fill: none; stroke: url(#qgrad); stroke-width: 17; stroke-linecap: round; stroke-linejoin: round; }
+  .qmark .dot { fill: var(--accent); transform-box: fill-box; transform-origin: center; }
+  .hero .qmark .stroke { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1.3s var(--ease) .15s forwards; }
+  .hero .qmark .dot { transform: scale(0); animation: pop .45s var(--ease) 1.3s forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes pop { to { transform: scale(1); } }
+  .hero .conf { color: var(--muted); font-size: .92rem; margin: 1rem 0 .1rem; }
+  .hero .date { color: var(--muted); font-size: .92rem; margin: 0 0 1.25rem; }
+  .hero h1 { font-family: var(--font-q); font-weight: 700; font-size: clamp(2.3rem, 9vw, 3.3rem); line-height: 1.05; margin: 0; color: var(--plum); }
+  .hero .subtitle { font-size: 1.12rem; margin: .5rem 0 1.25rem; }
+  .hero .lead { font-family: var(--font-q); font-size: 1.45rem; line-height: 1.4; margin: 0 auto 1.5rem; white-space: pre-line; }
+  .hero .by { color: var(--muted); font-size: .95rem; margin: 0 0 1.75rem; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 48px; padding: .6rem 1.4rem; border-radius: 12px; border: 1.5px solid var(--brand); background: var(--brand); color: #fff; font-weight: 600; font-size: 1.05rem; text-decoration: none; transition: background-color .15s ease, border-color .15s ease; }
+  .btn:hover { background: var(--brand-hover); border-color: var(--brand-hover); }
+  .btn.secondary { background: transparent; color: var(--brand); }
+  .btn.secondary:hover { background: var(--tint); }
+  .btn.wide { width: 100%; }
+  .linkbtn { background: none; border: 0; padding: .4rem .2rem; min-height: 44px; color: var(--brand); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+  /* who */
+  h2.title { font-family: var(--font-q); font-size: 2rem; line-height: 1.15; margin: .25rem 0 1rem; color: var(--plum); }
+  fieldset { border: 0; margin: 0 0 1.25rem; padding: 0; }
+  legend { font-weight: 600; margin-bottom: .5rem; padding: 0; }
+  .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+  .seg label { position: relative; display: flex; align-items: center; justify-content: center; min-height: 48px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--card); font-weight: 600; cursor: pointer; }
+  .seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .seg label:has(input:checked) { border-color: var(--brand); background: var(--tint); color: var(--plum); box-shadow: inset 0 0 0 1px var(--brand); }
+  .seg label:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 3px; }
+  .field { margin-bottom: .75rem; }
+  .field label { display: block; font-size: .92rem; color: var(--muted); margin-bottom: .25rem; }
+  .field input { width: 100%; min-height: 48px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--card); padding: .55rem .8rem; font-size: 1.05rem; }
+  .field input:focus { border-color: var(--brand); }
+  .topic-field label { font-size: 1.05rem; font-weight: 600; color: var(--ink); }
+  .topic-field input { font-family: var(--font-q); font-size: 1.3rem; }
+  .field input[aria-invalid="true"] { border-color: #b42318; }
+  .error { color: #b42318; font-weight: 600; margin: .35rem 0 0; }
+  .hint { color: var(--muted); font-size: .92rem; margin: .4rem 0 0; }
+  .curiosity { background: var(--card); border: 1px solid var(--line); border-inline-start: 4px solid var(--accent); border-radius: 12px; padding: .8rem 1rem; margin: 1rem 0 1.5rem; }
+  .curiosity p { font-family: var(--font-q); font-size: 1.3rem; line-height: 1.35; margin: 0; }
+
+  /* generator */
+  .topicbar { display: flex; align-items: flex-end; justify-content: space-between; gap: .75rem; border-bottom: 1px solid var(--line); padding-bottom: .75rem; margin-bottom: 1rem; }
+  .topicbar h2 { font-family: var(--font-q); font-size: 1.85rem; line-height: 1.15; margin: 0; color: var(--plum); overflow-wrap: anywhere; }
+  .greet { font-weight: 600; margin: 0 0 .6rem; }
+  .tags { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin-bottom: 1.25rem; }
+  .tag { display: flex; flex-direction: column; align-items: flex-start; gap: .3rem; text-align: start; min-height: 96px; padding: .8rem .9rem; border: 1.5px solid var(--line); border-radius: 14px; background: var(--card); transition: border-color .15s ease, background-color .15s ease; }
+  .tag:hover { border-color: var(--brand); }
+  .tag[aria-pressed="true"] { border-color: var(--brand); background: var(--tint); box-shadow: inset 0 0 0 1px var(--brand); }
+  .tag-label { font-weight: 700; letter-spacing: .03em; color: var(--plum); font-size: .86rem; white-space: nowrap; }
+  .tag-sub { color: var(--muted); font-size: .86rem; line-height: 1.35; }
+  .tag.lottery { background: linear-gradient(135deg, #fff 0%, #f7e3f0 100%); }
+  .tag.lottery .tag-label { color: var(--accent); }
+
+  .results { min-height: 2rem; }
+  .loading { text-align: center; padding: 1.5rem 0 2rem; color: var(--muted); }
+  .loading .qmark { width: 64px; height: auto; margin-bottom: .75rem; }
+  .loading .qmark .stroke { stroke-dasharray: 1; animation: think 1.7s var(--ease) infinite; }
+  .loading .qmark .dot { animation: blink 1.7s var(--ease) infinite; }
+  @keyframes think { 0% { stroke-dashoffset: 1; opacity: 1; } 55% { stroke-dashoffset: 0; opacity: 1; } 85% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+  @keyframes blink { 0%, 50% { transform: scale(0); } 62% { transform: scale(1.15); } 70%, 85% { transform: scale(1); } 100% { transform: scale(1); opacity: 0; } }
+  .edit-hint { color: var(--muted); font-size: .92rem; margin: 0 0 .75rem; }
+  .qcard { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: .85rem 1rem .75rem; margin-bottom: .75rem; box-shadow: 0 1px 0 rgba(42, 10, 48, .04), 0 10px 24px -18px rgba(98, 0, 103, .35); animation: deal .42s var(--ease) both; animation-delay: calc(var(--i, 0) * 70ms); }
+  @keyframes deal { from { opacity: 0; transform: translateY(14px) rotate(-.4deg); } to { opacity: 1; transform: none; } }
+  .qcard .move { margin: 0 0 .15rem; }
+  .qtext { display: block; width: 100%; border: 1.5px dashed transparent; border-radius: 10px; background: transparent; font-family: var(--font-q); font-size: 1.24rem; line-height: 1.5; padding: .3rem .5rem; margin: 0 -.5rem; width: calc(100% + 1rem); resize: none; overflow: hidden; }
+  .qtext:hover { border-color: var(--line); }
+  .qtext:focus { border-style: solid; border-color: var(--brand); background: #fff; }
+  .qactions { display: flex; justify-content: flex-end; margin-top: .35rem; }
+  .copy { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; padding: .4rem 1rem; border-radius: 999px; border: 0; background: var(--brand); color: #fff; font-weight: 600; transition: background-color .15s ease; }
+  .copy:hover { background: var(--brand-hover); }
+  .copy.done { background: var(--ok); }
+  .copy svg { width: 18px; height: 18px; }
+  .more { margin-top: .5rem; }
+  .notice { background: var(--card); border: 1px solid var(--line); border-inline-start: 4px solid var(--focus); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+  .notice h3 { margin: 0 0 .4rem; font-size: 1.1rem; }
+  .notice p { margin: 0 0 .75rem; }
+  .notice textarea { width: 100%; min-height: 12rem; border: 1.5px solid var(--line); border-radius: 10px; padding: .6rem .7rem; font-size: .95rem; line-height: 1.5; background: #fff; }
+  .notice .row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .6rem; }
+
+  .bottomnav { display: flex; flex-direction: column; align-items: flex-start; gap: .25rem; border-top: 1px solid var(--line); margin-top: 1.5rem; padding-top: .75rem; }
+  .privacy { color: var(--muted); font-size: .86rem; margin: 0; display: flex; gap: .4rem; align-items: flex-start; }
+  .privacy svg { flex: none; width: 16px; height: 16px; margin-top: .2rem; }
+
+  /* copied */
+  .sharecard { background: linear-gradient(140deg, var(--plum) 0%, var(--brand) 70%, var(--brand-hover) 100%); color: #fff; border-radius: var(--radius); padding: 1.1rem 1.2rem; margin: 0 0 1.25rem; }
+  .sharecard .eyebrow { color: #ffd9ee; }
+  .sharecard p.q { font-family: var(--font-q); font-size: 1.5rem; line-height: 1.35; margin: 0; }
+  .clist { list-style: none; margin: 0 0 1rem; padding: 0; }
+  .clist li { display: flex; align-items: flex-start; gap: .6rem; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: .7rem .8rem; margin-bottom: .6rem; }
+  .clist li.chosen { border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
+  .clist input[type="radio"] { width: 22px; height: 22px; margin-top: .35rem; accent-color: var(--brand); flex: none; }
+  .clist label { flex: 1; cursor: pointer; }
+  .clist .move { display: block; margin: 0; }
+  .clist .q { font-family: var(--font-q); font-size: 1.12rem; line-height: 1.45; }
+  .clist .remove { flex: none; min-height: 44px; min-width: 44px; border: 0; background: none; color: var(--muted); font-size: .85rem; text-decoration: underline; }
+  .empty { color: var(--muted); }
+
+  footer { border-top: 1px solid var(--line); color: var(--muted); font-size: .88rem; padding: 1.25rem 1rem 2rem; }
+  footer .inner { max-width: 640px; margin: 0 auto; }
+  footer p { margin: 0 0 .5rem; }
+  .accessibility-statement { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: .5rem 1rem; margin: .75rem 0; }
+  .accessibility-statement summary { cursor: pointer; font-weight: 600; color: var(--ink); min-height: 44px; display: flex; align-items: center; }
+  .accessibility-statement a { color: var(--brand); }
+
+  @media (max-width: 359px) { .tags { grid-template-columns: 1fr; } .seg { grid-template-columns: 1fr; } }
+  @media (min-width: 480px) { main { padding-top: 1.75rem; } .band .logo { height: 46px; } .tag-label { font-size: .95rem; letter-spacing: .05em; } }
+  @media (min-width: 768px) { main { padding: 2.25rem 1.5rem 3rem; } .hero h1 { font-size: 3.5rem; } .tag { min-height: 104px; padding: 1rem 1.1rem; } }
+  @media (min-width: 1024px) { main, footer .inner { max-width: 680px; } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    .hero .qmark .stroke, .loading .qmark .stroke { stroke-dashoffset: 0; animation: none; }
+    .hero .qmark .dot, .loading .qmark .dot { transform: none; animation: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main" data-t="skip">דלג לתוכן הראשי</a>
+<div class="testbar" id="testbar" role="note" hidden></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="qgrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#620067"/>
+      <stop offset="1" stop-color="#b8127e"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<header class="band">
+  <img class="logo" src="logo-levinsky-white.png" width="527" height="160" alt="" data-talt="logoAlt">
+  <button type="button" class="langbtn" id="langBtn"></button>
+</header>
+
+<main id="main">
+
+  <section id="s-welcome" class="screen" aria-labelledby="h-welcome">
+    <div class="hero">
+      <svg class="qmark" viewBox="0 0 120 200" aria-hidden="true" focusable="false">
+        <path class="stroke" pathLength="1" d="M28 62 C28 30 50 14 64 14 C83 14 98 30 98 50 C98 72 79 80 67 92 C60 99 62 107 62 117 L62 128"/>
+        <circle class="dot" cx="62" cy="168" r="12"/>
+      </svg>
+      <p class="conf" data-t="conf"></p>
+      <p class="date" data-t="confDate"></p>
+      <h1 id="h-welcome" tabindex="-1" data-t="title"></h1>
+      <p class="subtitle" data-t="subtitle"></p>
+      <p class="lead" data-t="lead"></p>
+      <p class="by" data-t="by"></p>
+      <button type="button" class="btn" id="startBtn" data-t="start"></button>
+    </div>
+  </section>
+
+  <section id="s-who" class="screen" aria-labelledby="h-who" hidden>
+    <h2 class="title" id="h-who" tabindex="-1" data-t="whoTitle"></h2>
+    <form id="whoForm" novalidate>
+      <fieldset>
+        <legend data-t="modeLegend"></legend>
+        <div class="seg">
+          <label><input type="radio" name="mode" value="solo"><span data-t="modeSolo"></span></label>
+          <label><input type="radio" name="mode" value="pair"><span data-t="modePair"></span></label>
+          <label><input type="radio" name="mode" value="trio"><span data-t="modeTrio"></span></label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend data-t="namesLegend"></legend>
+        <div class="field" data-name="0"><label for="name0" data-t="name1"></label><input id="name0" type="text" maxlength="40" autocomplete="off"></div>
+        <div class="field" data-name="1"><label for="name1" data-t="name2"></label><input id="name1" type="text" maxlength="40" autocomplete="off"></div>
+        <div class="field" data-name="2"><label for="name2" data-t="name3"></label><input id="name2" type="text" maxlength="40" autocomplete="off"></div>
+      </fieldset>
+      <div class="field topic-field">
+        <label for="topic" data-t="topicLabel"></label>
+        <input id="topic" type="text" maxlength="120" autocomplete="off" aria-describedby="topicHint topicError" data-tp="topicPh">
+        <p class="error" id="topicError" hidden data-t="topicError"></p>
+        <p class="hint" id="topicHint" data-t="topicHint"></p>
+      </div>
+      <div class="curiosity">
+        <p class="eyebrow eyebrow-en" lang="en" dir="ltr">Curiosity</p>
+        <p data-t="curiosity"></p>
+      </div>
+      <button type="submit" class="btn wide" data-t="toGen"></button>
+    </form>
+  </section>
+
+  <section id="s-gen" class="screen" aria-labelledby="h-gen" hidden>
+    <div class="topicbar">
+      <div>
+        <p class="eyebrow" data-t="topicEyebrow"></p>
+        <h2 id="h-gen" tabindex="-1"></h2>
+      </div>
+      <button type="button" class="linkbtn" id="changeTopic" data-t="change"></button>
+    </div>
+    <p class="greet" id="greet"></p>
+    <div class="tags" id="tags" role="group" aria-labelledby="greet"></div>
+    <div class="results" id="results"></div>
+    <div class="bottomnav">
+      <button type="button" class="linkbtn" id="toCopied"></button>
+      <p class="privacy"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5Zm-3 8V7a3 3 0 0 1 6 0v3H9Z"/></svg><span data-t="privacy"></span></p>
+    </div>
+  </section>
+
+  <section id="s-copied" class="screen" aria-labelledby="h-copied" hidden>
+    <h2 class="title" id="h-copied" tabindex="-1" data-t="copiedTitle"></h2>
+    <div class="sharecard" id="sharecard" hidden>
+      <p class="eyebrow" data-t="shareEyebrow"></p>
+      <p class="q" id="shareText" dir="auto"></p>
+    </div>
+    <p data-t="copiedLead"></p>
+    <ul class="clist" id="clist"></ul>
+    <p class="empty" id="cempty" data-t="empty" hidden></p>
+    <button type="button" class="btn secondary wide" id="backToGen" data-t="back"></button>
+  </section>
+
+  <p class="sr-only" id="status" role="status" aria-live="polite"></p>
+</main>
+
+<footer>
+  <div class="inner">
+    <p data-t="footBy"></p>
+    <details class="accessibility-statement">
+      <summary data-t="a11yTitle"></summary>
+      <p data-t="a11y1"></p>
+      <p data-t="a11y2"></p>
+      <p><strong data-t="a11yCoord"></strong><br><span data-t="a11yMail"></span> <a href="mailto:tomhagiladi@gmail.com" lang="en" dir="ltr">tomhagiladi@gmail.com</a></p>
+      <p data-t="a11yDate"></p>
+    </details>
+    <button type="button" class="linkbtn" id="resetBtn" data-t="reset"></button>
+  </div>
+</footer>
+
+<noscript><p style="padding:1rem;text-align:center">This app needs JavaScript.</p></noscript>
+
+<script>
+(() => {
+  "use strict";
+
+  // Filled when the server is deployed. Empty = the generator falls back to the copy-paste prompt.
+  const API = "https://beyond-answers-api.tomhagiladi-site.workers.dev";
+  // Shared workshop Firestore project. The web key only identifies the project; the rules allow
+  // create-only on ichte_questions with a single field, q. Nobody can read the questions back.
+  const FIRESTORE = { project: "ono-health-gallery", key: "AIzaSyC2tCO7o0QODtHVa4PfKCt4eBX7XEtLR9I", collection: "ichte_questions" };
+
+  const params = new URLSearchParams(location.search);
+  const MOCK = params.get("mock"); // "1" sample questions, "fail" backup mode, "slow" the per-phone limit
+
+  const HE = {
+    skip: "דלג לתוכן הראשי",
+    logoAlt: "המרכז האקדמי לוינסקי-וינגייט",
+    docTitle: "מעבר לתשובות - מחולל שאלות",
+    langBtn: "English",
+    testbar: "מצב בדיקה: שאלות לדוגמה קבועות, לא מהמודל.",
+    conf: "הכנס הבינלאומי הראשון ליוטגוגיה בהכשרת מורים",
+    confDate: "לוינסקי-וינגייט, 17.11.2026",
+    title: "מעבר לתשובות",
+    subtitle: "מעבדת שאלות יוטגוגית עם בינה מלאכותית",
+    lead: "היום לא מחפשים תשובות.\nמחפשים שאלות.",
+    by: "תום הגלעדי ופרופ' אמנון גלסנר",
+    start: "בואו נתחיל",
+    whoTitle: "מי שואל?",
+    modeLegend: "איך אתם עובדים?",
+    modeSolo: "לבד",
+    modePair: "בזוג",
+    modeTrio: "בשלשה",
+    namesLegend: "שמות (רשות)",
+    name1: "שם",
+    name2: "שם נוסף",
+    name3: "שם שלישי",
+    topicLabel: "הנושא שלכם",
+    topicPh: "למשל: שינה, גשרים, הצבע הכחול",
+    topicHint: "מתוך התחום שלכם או רחוק ממנו. מה שבאמת מסקרן אתכם.",
+    topicError: "כתבו נושא כדי להמשיך.",
+    curiosity: "מה יהיה מעניין לשאול על זה?",
+    toGen: "למחולל השאלות",
+    topicEyebrow: "הנושא שלכם",
+    change: "שינוי",
+    pick: "בחרו סוג שאלות:",
+    pickNamed: "{names}, בחרו סוג שאלות:",
+    loading: "מנסחים לכם שאלות...",
+    editHint: "אפשר לערוך כל שאלה. אחר כך העתיקו, והדביקו בצ'אט עם הבינה המלאכותית.",
+    qLabel: "שאלה {n}",
+    copy: "העתקה",
+    copied: "הועתק",
+    copyAria: "העתקת שאלה {n}",
+    more: "עוד שאלות מאותו סוג",
+    ready: "מוכנות {n} שאלות חדשות.",
+    didCopy: "השאלה הועתקה.",
+    copyFail: "ההעתקה לא הצליחה. סמנו את הטקסט והעתיקו ידנית.",
+    slowTitle: "רגע, הרבה בקשות",
+    slow: "יצאו הרבה בקשות מהטלפון הזה. נסו שוב בעוד כמה דקות.",
+    retry: "לנסות שוב",
+    backupTitle: "המחולל לא זמין כרגע",
+    backupText: "אפשר להמשיך בלעדיו: העתיקו את ההנחיה הזו לצ'אט שלכם, והבינה תכתוב לכם את השאלות.",
+    backupLabel: "ההנחיה לצ'אט",
+    copyPrompt: "העתקת ההנחיה",
+    promptCopied: "ההנחיה הועתקה.",
+    toCopied: "השאלות שהעתקנו ({n})",
+    privacy: "השאלות שאתם מעתיקים נשמרות בלי שמות, לסיכום הסדנה.",
+    copiedTitle: "השאלות שהעתקנו",
+    copiedLead: "בחרו שאלה אחת לשיתוף בשתי דקות. המטרה: לעורר סקרנות אצל האחרים, לא ללמד אותם.",
+    shareEyebrow: "השאלה שלנו לשיתוף",
+    empty: "עוד לא העתקתם שאלות. חזרו למחולל ובחרו סוג שאלות.",
+    remove: "הסרה",
+    removeAria: "הסרת השאלה מהרשימה: {q}",
+    back: "חזרה למחולל",
+    footBy: "סדנה: תום הגלעדי ופרופ' אמנון גלסנר",
+    reset: "ניקוי והתחלה מחדש",
+    resetConfirm: "למחוק מהטלפון את הנושא, השמות והשאלות שהעתקתם?",
+    a11yTitle: "הצהרת נגישות",
+    a11y1: "האפליקציה נבנתה בהתאם לתקנות שוויון זכויות לאנשים עם מוגבלות (התאמות נגישות לשירות), התשע\"ג-2013, ולתקן הישראלי ת\"י 5568 המבוסס על הנחיות WCAG 2.0 ברמה AA.",
+    a11y2: "נתקלתם בבעיית נגישות? נשמח לעזור:",
+    a11yCoord: "רכז נגישות: תום הגלעדי",
+    a11yMail: "דוא\"ל:",
+    a11yDate: "עודכן ב-25.10.2026.",
+    backupPrompt: "אנחנו בסדנה על שאילת שאלות לא קונבנציונליות.\nהנושא שלנו: {topic}\nכתוב לנו שש שאלות יצירתיות מהסוג הזה:\n{label}\n{sub}\nחשוב: קודם תבין מה הנושא כולל בפועל - פעולות, אנשים, מקומות, זמנים, רגשות וחפצים - ושנה את הרכיבים האלה, ולא את המילה עצמה.\nלמשל, על שינה: לא \"מה אם השינה הייתה גדולה פי מאה?\", אלא \"מה היה קורה אילו היינו ישנים 99 אחוז מזמן החיים שלנו?\"\nכל שאלה משפט אחד, בלי תשובות.",
+    and: "ו",
+  };
+
+  const EN = {
+    skip: "Skip to main content",
+    logoAlt: "Levinsky-Wingate Academic College",
+    docTitle: "Beyond Answers - a question generator",
+    langBtn: "עברית",
+    testbar: "Test mode: fixed sample questions, not from the model.",
+    conf: "The 1st International Conference on Heutagogy and Its Role in Teacher Education (ICHTE)",
+    confDate: "Levinsky-Wingate, 17.11.2026",
+    title: "Beyond Answers",
+    subtitle: "A Heutagogic Questioning Lab with GenAI",
+    lead: "Today we are not looking for answers.\nWe are looking for questions.",
+    by: "Tom Hagiladi and Prof. Amnon Glassner",
+    start: "Let's begin",
+    whoTitle: "Who is asking?",
+    modeLegend: "How are you working?",
+    modeSolo: "Solo",
+    modePair: "Pair",
+    modeTrio: "Trio",
+    namesLegend: "Names (optional)",
+    name1: "Name",
+    name2: "Another name",
+    name3: "Third name",
+    topicLabel: "Your topic",
+    topicPh: "e.g. sleep, bridges, the color blue",
+    topicHint: "From your own field or far from it. Whatever truly makes you curious.",
+    topicError: "Write a topic to continue.",
+    curiosity: "What would be interesting to ask about this?",
+    toGen: "To the question generator",
+    topicEyebrow: "Your topic",
+    change: "Change",
+    pick: "Choose a kind of question:",
+    pickNamed: "{names}, choose a kind of question:",
+    loading: "Crafting your questions...",
+    editHint: "You can edit any question. Then copy it and paste it into your AI chat.",
+    qLabel: "Question {n}",
+    copy: "Copy",
+    copied: "Copied",
+    copyAria: "Copy question {n}",
+    more: "More of this kind",
+    ready: "{n} new questions are ready.",
+    didCopy: "The question was copied.",
+    copyFail: "Copying did not work. Select the text and copy it by hand.",
+    slowTitle: "One moment, many requests",
+    slow: "This phone sent many requests. Try again in a few minutes.",
+    retry: "Try again",
+    backupTitle: "The generator is not available right now",
+    backupText: "You can carry on without it: copy this instruction into your own AI chat, and it will write the questions for you.",
+    backupLabel: "The instruction for your chat",
+    copyPrompt: "Copy the instruction",
+    promptCopied: "The instruction was copied.",
+    toCopied: "Questions we copied ({n})",
+    privacy: "Questions you copy are saved without names, for the workshop summary.",
+    copiedTitle: "Questions we copied",
+    copiedLead: "Choose one question to share in two minutes. The aim: to spark the others' curiosity, not to teach them.",
+    shareEyebrow: "Our question to share",
+    empty: "You have not copied any questions yet. Go back to the generator and choose a kind of question.",
+    remove: "Remove",
+    removeAria: "Remove from the list: {q}",
+    back: "Back to the generator",
+    footBy: "Workshop: Tom Hagiladi and Prof. Amnon Glassner",
+    reset: "Clear and start over",
+    resetConfirm: "Delete the topic, the names and your copied questions from this phone?",
+    a11yTitle: "Accessibility statement",
+    a11y1: "This app complies with Israeli Standard SI 5568, based on WCAG 2.0 Level AA guidelines, as required by Regulation 35 of Israel's Equal Rights for Persons with Disabilities Regulations.",
+    a11y2: "If you encounter any accessibility issue, please contact us:",
+    a11yCoord: "Accessibility coordinator: Tom Hagiladi",
+    a11yMail: "Email:",
+    a11yDate: "Updated 25.10.2026.",
+    backupPrompt: "We are in a workshop on asking unconventional questions.\nOur topic: {topic}\nWrite us six creative questions of this kind:\n{label}\n{sub}\nImportant: first understand what the topic actually involves - actions, people, places, times, feelings and objects - and transform those components, not the word itself.\nFor example, about sleep: not \"What if sleep were a hundred times bigger?\" but \"What would happen if we slept 99 percent of our lives?\"\nEach question is one sentence, with no answers.",
+    and: " and ",
+  };
+
+  const TAGS = [
+    { id: "sit", label: { he: "SIT: TRANSFORM", en: "SIT: TRANSFORM" }, sub: { he: "להגדיל, להקטין, לחבר, לפרק, להכפיל, להפוך", en: "Enlarge, reduce, combine, divide, multiply, reverse" } },
+    { id: "other", label: { he: "THE OTHER SIDE", en: "THE OTHER SIDE" }, sub: { he: "מה מאחורי הסיפור, מה ברקע, מה לא רואים", en: "Behind the story, in the background, unseen details" } },
+    { id: "whatif", label: { he: "WHAT IF...?", en: "WHAT IF...?" }, sub: { he: "מה היה קורה אילו...", en: "What would happen if..." } },
+    { id: "lottery", label: { he: "הגרלה", en: "SURPRISE ME" }, sub: { he: "תערובת פרועה מכל הסוגים", en: "A wild mix of every kind" } },
+  ];
+
+  // Test mode only (?mock=1): fixed samples about sleep, so the layout can be checked for free.
+  const MOCK_Q = {
+    he: {
+      sit: [["הגדלה", "מה היה קורה אילו היינו ישנים 99 אחוז מזמן החיים שלנו?"], ["הקטנה", "מה היה משתנה אילו לילה שלם של שינה היה נדחס לעשר דקות?"], ["חיבור", "מה אם המיטה הייתה גם הכיתה, ולומדים רק בזמן שישנים?"], ["פירוק", "מה היה קורה אילו היינו מפצלים את השינה לשש תנומות קצרות לאורך היום?"], ["הכפלה", "איך ייראו החיים אם לכל אחד היו שני לילות שונים בכל יממה?"], ["היפוך", "מה אם החברה כולה הייתה ערה בלילה וישנה ביום?"]],
+      other: [["מאחורי הסיפור", "מי קבע ששמונה שעות שינה הן נורמליות, ולמה?"], ["נקודת מבט חסרה", "איך נראה הלילה שלנו מנקודת המבט של הכרית?"], ["מה ברקע", "איזו עבודה נסתרת מתרחשת בעיר כולה בזמן שאנחנו ישנים?"], ["פרטים שלא רואים", "מה מספר הצד של המיטה שכל אחד מאיתנו בוחר לישון בו?"], ["עדשה אחרת", "איך היה מסביר את השינה שלנו חוקר מכוכב שבו אף אחד לא ישן?"], ["המובן מאליו", "מה אם ההנחה שחלומות הם רק רעש של המוח פשוט לא נכונה?"]],
+      whatif: [["בלי זה", "מה היה קורה אילו לא היינו יכולים להירדם?"], ["היסטוריה אחרת", "איך הייתה נראית ההיסטוריה אילו הנורה החשמלית לא הייתה מומצאת?"], ["עתיד רחוק", "איך תיראה תרבות השינה בעוד מאה שנה?"], ["חוקי טבע אחרים", "מה היה קורה אילו בזמן השינה הזמן היה עוצר לכולם חוץ מאיתנו?"], ["מקום אחר", "איך היו ישנים בעיר שבנויה מתחת למים?"], ["כולם או אף אחד", "מה היה קורה אילו כולם היו חולמים בדיוק אותו חלום בכל לילה?"]],
+      lottery: [["מועצה", "מה היו אומרים לאונרדו דה וינצ'י, חתול ונהגת מונית על הרגלי השינה שלנו?"], ["תחום רחוק", "מה יכולה אדריכלות ללמד אותנו על בנייה של לילה טוב?"], ["איפכא מסתברא", "למה ייתכן שדווקא שינה מרובה פוגעת בלמידה?"], ["בעיני הדבר עצמו", "מה השעון המעורר היה רוצה לומר לנו כל בוקר?"], ["בעיני ילד", "לאן הולכים כשישנים?"], ["שינוי", "מה אם כל לילה היה ארוך בשעה מהלילה הקודם?"]],
+    },
+    en: {
+      sit: [["Enlarge", "What would happen if we slept 99 percent of our lives?"], ["Reduce", "What would change if a whole night's sleep were squeezed into ten minutes?"], ["Combine", "What if the bed were also the classroom, and we learned only while asleep?"], ["Divide", "What if we split our sleep into six short naps spread across the day?"], ["Multiply", "How would life look if everyone had two different nights in every day?"], ["Reverse", "What if the whole of society were awake at night and asleep by day?"]],
+      other: [["Behind the story", "Who decided that eight hours of sleep is normal, and why?"], ["Missing perspective", "What does our night look like from the pillow's point of view?"], ["In the background", "What hidden work goes on across the city while we sleep?"], ["Unseen details", "What does the side of the bed each of us chooses say about us?"], ["Another lens", "How would a researcher from a planet where nobody sleeps explain our sleep?"], ["Taken for granted", "What if the idea that dreams are just the brain's noise is simply wrong?"]],
+      whatif: [["Without it", "What would happen if we could never fall asleep?"], ["Another history", "How would history look if the electric light bulb had never been invented?"], ["Far future", "What will sleep culture look like a hundred years from now?"], ["Other laws of nature", "What if time stopped for everyone except us while we slept?"], ["Somewhere else", "How would people sleep in a city built under water?"], ["Everyone or no one", "What would happen if everyone dreamed exactly the same dream every night?"]],
+      lottery: [["Council", "What would Leonardo da Vinci, a cat and a taxi driver say about our sleeping habits?"], ["Distant field", "What could architecture teach us about building a good night?"], ["Devil's advocate", "Why might sleeping more actually harm learning?"], ["Through its own eyes", "What would the alarm clock want to tell us every morning?"], ["Through a child's eyes", "Where do we go when we fall asleep?"], ["Transform", "What if every night were one hour longer than the last?"]],
+    },
+  };
+
+  // --- storage: per-phone conveniences only; the app works without it ---
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode */ } },
+    del(k) { try { localStorage.removeItem(k); } catch { /* private mode */ } },
+  };
+  // The conference runs in English: a phone without Hebrew in its languages opens in English.
+  const PHONE_LANG = (navigator.languages || [navigator.language || ""]).some((l) => /^(he|iw)\b/i.test(l)) ? "he" : "en";
+  const DEFAULTS = { lang: PHONE_LANG, mode: "pair", names: ["", "", ""], topic: "", copied: [], share: -1, shown: {}, sent: [] };
+  const S = Object.assign(structuredClone(DEFAULTS), store.get("ba.v1", {}));
+  if (!["he", "en"].includes(S.lang)) S.lang = "he";
+  const device = store.get("ba.device", null) || (() => {
+    const id = (crypto.randomUUID ? crypto.randomUUID() : `d-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`);
+    store.set("ba.device", id);
+    return id;
+  })();
+  function save() {
+    S.copied = S.copied.slice(-100);
+    S.sent = S.sent.slice(-400);
+    for (const k of Object.keys(S.shown)) S.shown[k] = S.shown[k].slice(-60);
+    store.set("ba.v1", S);
+  }
+
+  // --- helpers ---
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const T = () => (S.lang === "he" ? HE : EN);
+  const t = (key, vars = {}) => T()[key].replace(/\{(\w+)\}/g, (_, v) => (v in vars ? vars[v] : `{${v}}`));
+  const clean = (s) => String(s || "").replace(/\s+/g, " ").trim();
+  const hash = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  let current = null;
+  let busy = false;
+  let activeTag = null;
+
+  function el(tag, attrs = {}, ...kids) {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v === null || v === undefined || v === false) continue;
+      if (k === "class") e.className = v;
+      else if (k === "text") e.textContent = v;
+      else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+      else e.setAttribute(k, v === true ? "" : v);
+    }
+    for (const kid of kids) if (kid) e.append(kid);
+    return e;
+  }
+
+  function qmarkSvg(cls) {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("class", `qmark ${cls || ""}`);
+    svg.setAttribute("viewBox", "0 0 120 200");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("focusable", "false");
+    svg.innerHTML = '<path class="stroke" pathLength="1" d="M28 62 C28 30 50 14 64 14 C83 14 98 30 98 50 C98 72 79 80 67 92 C60 99 62 107 62 117 L62 128"/><circle class="dot" cx="62" cy="168" r="12"/>';
+    return svg;
+  }
+
+  const ICON_COPY = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1Zm3 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16h-9V7h9v14Z"/></svg>';
+  const ICON_DONE = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2Z"/></svg>';
+
+  function announce(msg) {
+    const s = $("#status");
+    s.textContent = "";
+    setTimeout(() => { s.textContent = msg; }, 60);
+  }
+
+  function joinNames(list) {
+    const n = list.map(clean).filter(Boolean);
+    if (n.length <= 1) return n[0] || "";
+    const last = n.pop();
+    return S.lang === "he" ? `${n.join(", ")} ${T().and}${last}` : `${n.join(", ")}${T().and}${last}`;
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      const ta = el("textarea", { class: "sr-only", "aria-hidden": "true" });
+      ta.value = text;
+      document.body.append(ta);
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand("copy"); } catch { ok = false; }
+      ta.remove();
+      return ok;
+    }
+  }
+
+  function autoGrow(ta) {
+    ta.style.height = "auto";
+    ta.style.height = `${ta.scrollHeight + 2}px`;
+  }
+
+  // --- the question collection: only the question text, once per phone ---
+  function saveQuestion(text) {
+    const q = clean(text).slice(0, 500);
+    if (!q || MOCK || FIRESTORE.key.startsWith("__")) return;
+    const h = hash(q);
+    if (S.sent.includes(h)) return;
+    S.sent.push(h);
+    save();
+    const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE.project}/databases/(default)/documents/${FIRESTORE.collection}?key=${FIRESTORE.key}`;
+    fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ fields: { q: { stringValue: q } } }),
+      keepalive: true,
+    }).catch(() => { /* collection is best effort; the participant's flow never waits for it */ });
+  }
+
+  function addCopied(text, move) {
+    const q = clean(text);
+    if (!q) return;
+    if (!S.copied.some((c) => c.text === q)) S.copied.push({ text: q, move: move || "" });
+    save();
+    renderCount();
+  }
+
+  // --- screens ---
+  const SCREENS = ["welcome", "who", "gen", "copied"];
+  function show(name, push = true) {
+    if ((name === "gen" || name === "copied") && !S.topic) name = "who";
+    for (const s of SCREENS) $(`#s-${s}`).hidden = s !== name;
+    current = name;
+    if (name === "who") fillWho();
+    if (name === "gen") renderGen();
+    if (name === "copied") renderCopied();
+    if (push) history.pushState({ s: name }, "", `#${name}`);
+    window.scrollTo(0, 0);
+    const h = $(`#s-${name} [tabindex="-1"]`);
+    if (h) h.focus({ preventScroll: true });
+  }
+
+  function applyLang() {
+    const L = T();
+    document.documentElement.lang = S.lang;
+    document.documentElement.dir = S.lang === "he" ? "rtl" : "ltr";
+    document.title = L.docTitle;
+    for (const n of document.querySelectorAll("[data-t]")) n.textContent = L[n.dataset.t];
+    for (const n of document.querySelectorAll("[data-tp]")) n.placeholder = L[n.dataset.tp];
+    for (const n of document.querySelectorAll("[data-talt]")) n.alt = L[n.dataset.talt];
+    const lb = $("#langBtn");
+    lb.textContent = L.langBtn;
+    lb.lang = S.lang === "he" ? "en" : "he";
+    lb.setAttribute("aria-label", S.lang === "he" ? "Switch to English" : "מעבר לעברית");
+    const tb = $("#testbar");
+    tb.hidden = !MOCK;
+    tb.textContent = L.testbar;
+    if (current === "gen") renderGen(true);
+    if (current === "copied") renderCopied();
+    renderCount();
+  }
+
+  // --- who ---
+  function fillWho() {
+    for (const r of document.querySelectorAll('input[name="mode"]')) r.checked = r.value === S.mode;
+    S.names.forEach((n, i) => { $(`#name${i}`).value = n; });
+    $("#topic").value = S.topic;
+    syncNames();
+  }
+  function syncNames() {
+    const count = { solo: 1, pair: 2, trio: 3 }[S.mode] || 2;
+    for (const f of document.querySelectorAll("[data-name]")) f.hidden = Number(f.dataset.name) >= count;
+  }
+
+  // --- generator ---
+  function renderGen(keepResults = false) {
+    $("#h-gen").textContent = S.topic;
+    const names = joinNames(S.names.slice(0, { solo: 1, pair: 2, trio: 3 }[S.mode] || 2));
+    $("#greet").textContent = names ? t("pickNamed", { names }) : t("pick");
+    const box = $("#tags");
+    box.replaceChildren(...TAGS.map((tg) => {
+      const isLatin = /^[A-Z]/.test(tg.label[S.lang]);
+      return el("button", {
+        type: "button", class: `tag${tg.id === "lottery" ? " lottery" : ""}`, "aria-pressed": String(activeTag === tg.id),
+        onclick: () => generate(tg.id),
+      },
+      el("span", { class: "tag-label", dir: isLatin ? "ltr" : null, lang: isLatin ? "en" : null, text: tg.label[S.lang] }),
+      el("span", { class: "tag-sub", text: tg.sub[S.lang] }));
+    }));
+    if (!keepResults && !activeTag) $("#results").replaceChildren();
+    renderCount();
+  }
+
+  function renderCount() {
+    $("#toCopied").textContent = t("toCopied", { n: S.copied.length });
+  }
+
+  function setPressed(tag) {
+    activeTag = tag;
+    for (const [i, b] of [...$("#tags").children].entries()) b.setAttribute("aria-pressed", String(TAGS[i].id === tag));
+  }
+
+  async function fetchQuestions(tag) {
+    const key = `${S.lang}|${S.topic}`;
+    const exclude = (S.shown[key] || []).slice(-40);
+    if (MOCK) {
+      await sleep(1400);
+      if (MOCK === "fail") throw new Error("backup");
+      if (MOCK === "slow") throw new Error("slow");
+      return MOCK_Q[S.lang][tag].map(([move, text]) => ({ move, text }));
+    }
+    if (!API) throw new Error("backup");
+    let res;
+    try {
+      res = await fetch(`${API}/generate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ topic: S.topic, tag, lang: S.lang, exclude, device }),
+        signal: AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined,
+      });
+    } catch {
+      throw new Error("backup");
+    }
+    if (res.status === 429) throw new Error("slow");
+    if (!res.ok) throw new Error("backup");
+    const data = await res.json();
+    if (!Array.isArray(data.questions) || !data.questions.length) throw new Error("backup");
+    return data.questions;
+  }
+
+  async function generate(tag) {
+    if (busy) return;
+    busy = true;
+    setPressed(tag);
+    const box = $("#results");
+    box.setAttribute("aria-busy", "true");
+    box.replaceChildren(el("div", { class: "loading" }, qmarkSvg(), el("p", { text: t("loading") })));
+    try {
+      const qs = await fetchQuestions(tag);
+      const key = `${S.lang}|${S.topic}`;
+      S.shown[key] = [...(S.shown[key] || []), ...qs.map((q) => q.text)];
+      save();
+      renderCards(qs, tag);
+      announce(t("ready", { n: qs.length }));
+    } catch (e) {
+      if (e.message === "slow") renderSlow(tag);
+      else renderBackup(tag);
+    } finally {
+      busy = false;
+      box.setAttribute("aria-busy", "false");
+    }
+  }
+
+  function renderCards(qs, tag) {
+    const cards = qs.map((q, i) => {
+      const id = `q-${Date.now()}-${i}`;
+      const ta = el("textarea", { class: "qtext", id, rows: "1", dir: "auto", spellcheck: "false" });
+      ta.value = q.text;
+      ta.addEventListener("input", () => autoGrow(ta));
+      const btn = el("button", { type: "button", class: "copy", "aria-label": t("copyAria", { n: i + 1 }) });
+      btn.innerHTML = `${ICON_COPY}<span>${t("copy")}</span>`;
+      btn.addEventListener("click", async () => {
+        const text = clean(ta.value);
+        if (!text) return;
+        const ok = await copyText(text);
+        if (!ok) { announce(t("copyFail")); ta.focus(); ta.select(); return; }
+        btn.classList.add("done");
+        btn.innerHTML = `${ICON_DONE}<span>${t("copied")}</span>`;
+        setTimeout(() => { btn.classList.remove("done"); btn.innerHTML = `${ICON_COPY}<span>${t("copy")}</span>`; }, 2200);
+        announce(t("didCopy"));
+        addCopied(text, q.move);
+        saveQuestion(text);
+      });
+      const card = el("article", { class: "qcard", style: `--i:${i}` },
+        q.move ? el("p", { class: "eyebrow move", text: q.move }) : null,
+        el("label", { class: "sr-only", for: id, text: t("qLabel", { n: i + 1 }) }),
+        ta,
+        el("div", { class: "qactions" }, btn));
+      return card;
+    });
+    const more = el("button", { type: "button", class: "btn secondary wide more", text: t("more"), onclick: () => generate(tag) });
+    $("#results").replaceChildren(el("p", { class: "edit-hint", text: t("editHint") }), ...cards, more);
+    for (const ta of document.querySelectorAll(".qtext")) autoGrow(ta);
+  }
+
+  function renderSlow(tag) {
+    $("#results").replaceChildren(el("div", { class: "notice", role: "alert" },
+      el("h3", { text: t("slowTitle") }),
+      el("p", { text: t("slow") }),
+      el("button", { type: "button", class: "btn secondary", text: t("retry"), onclick: () => generate(tag) })));
+  }
+
+  function renderBackup(tag) {
+    const tg = TAGS.find((x) => x.id === tag);
+    const prompt = t("backupPrompt", { topic: S.topic, label: tg.label[S.lang], sub: tg.sub[S.lang] });
+    const ta = el("textarea", { id: "backupText", dir: "auto" });
+    ta.value = prompt;
+    const copyBtn = el("button", { type: "button", class: "btn", text: t("copyPrompt") });
+    copyBtn.addEventListener("click", async () => { if (await copyText(ta.value)) announce(t("promptCopied")); else { ta.focus(); ta.select(); announce(t("copyFail")); } });
+    $("#results").replaceChildren(el("div", { class: "notice", role: "alert" },
+      el("h3", { text: t("backupTitle") }),
+      el("p", { text: t("backupText") }),
+      el("label", { for: "backupText", class: "sr-only", text: t("backupLabel") }),
+      ta,
+      el("div", { class: "row" }, copyBtn, el("button", { type: "button", class: "btn secondary", text: t("retry"), onclick: () => generate(tag) }))));
+  }
+
+  // --- copied ---
+  function renderCopied() {
+    const list = $("#clist");
+    $("#cempty").hidden = S.copied.length > 0;
+    if (S.share >= S.copied.length) S.share = -1;
+    list.replaceChildren(...S.copied.map((c, i) => {
+      const id = `share-${i}`;
+      const radio = el("input", { type: "radio", name: "share", id, value: String(i) });
+      radio.checked = S.share === i;
+      radio.addEventListener("change", () => { S.share = i; save(); renderCopied(); $(`#share-${i}`).focus(); });
+      return el("li", { class: S.share === i ? "chosen" : "" },
+        radio,
+        el("label", { for: id },
+          c.move ? el("span", { class: "eyebrow move", text: c.move }) : null,
+          el("span", { class: "q", dir: "auto", text: c.text })),
+        el("button", {
+          type: "button", class: "remove", text: t("remove"), "aria-label": t("removeAria", { q: c.text }),
+          onclick: () => { S.copied.splice(i, 1); if (S.share === i) S.share = -1; else if (S.share > i) S.share -= 1; save(); renderCopied(); renderCount(); $("#h-copied").focus(); },
+        }));
+    }));
+    const chosen = S.copied[S.share];
+    $("#sharecard").hidden = !chosen;
+    $("#shareText").textContent = chosen ? chosen.text : "";
+  }
+
+  // --- wiring ---
+  $("#langBtn").addEventListener("click", () => { S.lang = S.lang === "he" ? "en" : "he"; save(); applyLang(); });
+  $("#startBtn").addEventListener("click", () => show("who"));
+  for (const r of document.querySelectorAll('input[name="mode"]')) r.addEventListener("change", () => { S.mode = r.value; save(); syncNames(); });
+  for (let i = 0; i < 3; i++) $(`#name${i}`).addEventListener("input", (e) => { S.names[i] = e.target.value; save(); });
+  $("#whoForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const topic = clean($("#topic").value).slice(0, 120);
+    const err = $("#topicError");
+    if (!topic) {
+      err.hidden = false;
+      $("#topic").setAttribute("aria-invalid", "true");
+      $("#topic").focus();
+      return;
+    }
+    err.hidden = true;
+    $("#topic").removeAttribute("aria-invalid");
+    if (topic !== S.topic) { activeTag = null; $("#results").replaceChildren(); }
+    S.topic = topic;
+    save();
+    show("gen");
+  });
+  $("#changeTopic").addEventListener("click", () => show("who"));
+  $("#toCopied").addEventListener("click", () => show("copied"));
+  $("#backToGen").addEventListener("click", () => show("gen"));
+  $("#resetBtn").addEventListener("click", () => {
+    if (!confirm(t("resetConfirm"))) return;
+    const lang = S.lang;
+    Object.assign(S, structuredClone(DEFAULTS), { lang, sent: S.sent });
+    save();
+    activeTag = null;
+    $("#results").replaceChildren();
+    show("welcome");
+  });
+  window.addEventListener("popstate", (e) => show((e.state && e.state.s) || "welcome", false));
+
+  applyLang();
+  const start = location.hash.slice(1);
+  show(SCREENS.includes(start) ? start : "welcome", false);
+  history.replaceState({ s: current }, "", `#${current}`);
+})();
+</script>
+</body>
+</html>
