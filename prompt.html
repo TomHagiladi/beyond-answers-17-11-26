@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="description" content="Beyond Answers - the full prompt behind the question generator, to paste into any AI chat">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<title>Beyond Answers - ההנחיה</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23142638'/%3E%3Ctext x='32' y='47' font-size='44' font-family='Arial,sans-serif' font-weight='700' fill='%23f67953' text-anchor='middle'%3E%3F%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* The take-home page (Tom, 17.11.2026): the prompt behind the generator, reworded for a chat,
+     so participants keep generating questions in their own AI, on their own account.
+     Same tokens as index.html; contrast was measured there (lowest 5.1:1). */
+  :root {
+    --navy: #152a3b;
+    --panel: #142638;
+    --navy-hover: #23405a;
+    --coral: #f67953;
+    --teal-ink: #0f7376;
+    --paper: #f8f6f0;
+    --card: #ffffff;
+    --line: #d6ddd9;
+    --rule: #bac9c7;
+    --tint: #eef5f4;
+    --muted: #4f626d;
+    --ok: #0f7376;
+    --focus: #b5451f;
+    --font: "Heebo", "Segoe UI", system-ui, sans-serif;
+    --radius: 6px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; font-family: var(--font); color: var(--navy); background: var(--paper); line-height: 1.55; font-size: 1rem; }
+  button, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .skip-link { position: absolute; top: -100%; inset-inline-start: 0; background: var(--navy); color: #fff; padding: .75rem 1.5rem; font-weight: 700; z-index: 200; text-decoration: none; }
+  .skip-link:focus { top: 0; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+  .band { background: var(--panel); color: #fff; }
+  .band .inner { max-width: 680px; margin: 0 auto; padding: .6rem 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .brand { margin: 0; font-weight: 800; letter-spacing: .02em; display: flex; align-items: center; gap: .5rem; }
+  .brand .dot { width: .6rem; height: .6rem; border-radius: 50%; background: var(--coral); }
+  .band .linkbtn { color: #fff; }
+  .band .linkbtn:focus-visible { outline-color: var(--coral); }
+
+  main { max-width: 680px; margin: 0 auto; padding: 1.5rem 1rem 2.5rem; }
+  .eyebrow { font-size: .8rem; font-weight: 700; color: var(--teal-ink); margin: 0 0 .3rem; }
+  h1 { font-weight: 800; font-size: 2rem; line-height: 1.15; margin: 0 0 .75rem; }
+  .lead { font-size: 1.1rem; margin: 0 0 1.25rem; }
+  .steps { list-style: none; margin: 0 0 1.5rem; padding: 0; counter-reset: s; border-top: 1px solid var(--rule); }
+  .steps li { counter-increment: s; display: flex; gap: .9rem; align-items: baseline; padding: .7rem 0; border-bottom: 1px solid var(--rule); }
+  .steps li::before { content: counter(s, decimal-leading-zero); flex: none; color: var(--teal-ink); font-weight: 800; letter-spacing: .06em; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 48px; padding: .6rem 1.4rem; border-radius: 8px; border: 1.5px solid var(--navy); background: var(--navy); color: #fff; font-weight: 600; font-size: 1.05rem; transition: background-color .15s ease; }
+  .btn:hover { background: var(--navy-hover); }
+  .btn.done { background: var(--ok); border-color: var(--ok); }
+  .btn svg { width: 20px; height: 20px; }
+  .linkbtn { background: none; border: 0; padding: .4rem .2rem; min-height: 44px; color: var(--navy); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+  .promptbox { margin: 1.5rem 0 0; }
+  .promptbox label { display: block; font-weight: 700; margin: 0 0 .4rem; }
+  textarea { width: 100%; min-height: 26rem; border: 1.5px solid var(--line); border-radius: var(--radius); padding: .8rem .9rem; font-size: .95rem; line-height: 1.55; background: var(--card); resize: vertical; }
+  .note { color: var(--muted); margin: .75rem 0 0; }
+  .back { display: inline-block; margin-top: 1.5rem; color: var(--navy); font-weight: 600; text-underline-offset: 3px; min-height: 44px; padding-top: .6rem; }
+
+  footer { border-top: 1px solid var(--line); color: var(--muted); font-size: .88rem; padding: 1.25rem 1rem 2rem; }
+  footer .inner { max-width: 680px; margin: 0 auto; }
+  footer p { margin: 0 0 .5rem; }
+  .accessibility-statement { background: var(--card); color: var(--navy); border: 1px solid var(--line); border-radius: var(--radius); padding: .5rem 1rem; margin: .75rem 0; }
+  .accessibility-statement summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; }
+  .accessibility-statement a { color: var(--navy); }
+  @media (min-width: 768px) { main { padding: 2.25rem 1.5rem 3rem; } h1 { font-size: 2.4rem; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main" data-t="skip"></a>
+
+<header class="band">
+  <div class="inner">
+    <p class="brand" lang="en" dir="ltr"><span class="dot" aria-hidden="true"></span>Beyond Answers</p>
+    <button type="button" class="linkbtn" id="langBtn"></button>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+  <p class="eyebrow" data-t="eyebrow"></p>
+  <h1 data-t="title"></h1>
+  <p class="lead" data-t="lead"></p>
+  <ol class="steps">
+    <li data-t="s1"></li>
+    <li data-t="s2"></li>
+    <li data-t="s3"></li>
+  </ol>
+  <button type="button" class="btn" id="copyBtn"></button>
+  <div class="promptbox">
+    <label for="promptText" data-t="label"></label>
+    <textarea id="promptText" readonly spellcheck="false"></textarea>
+  </div>
+  <p class="note" data-t="note"></p>
+  <a class="back" href="./" data-t="back"></a>
+  <p class="sr-only" id="status" role="status" aria-live="polite"></p>
+</main>
+
+<footer>
+  <div class="inner">
+    <p data-t="footBy"></p>
+    <details class="accessibility-statement">
+      <summary data-t="a11yTitle"></summary>
+      <p data-t="a11y1"></p>
+      <p data-t="a11y2"></p>
+      <p><strong data-t="a11yCoord"></strong><br><span data-t="a11yMail"></span> <a href="mailto:tomhagiladi@gmail.com" lang="en" dir="ltr">tomhagiladi@gmail.com</a></p>
+      <p data-t="a11yDate"></p>
+    </details>
+  </div>
+</footer>
+
+<noscript><p style="padding:1rem;text-align:center">This page needs JavaScript to show the prompt.</p></noscript>
+
+<script type="text/plain" id="prompt-he">אתה מחולל שאלות יצירתיות. התפקיד שלך הוא לעזור לי לשאול שאלות לא קונבנציונליות על נושא שמסקרן אותי: שאלות עמוקות, מפתיעות, ביקורתיות ורפלקטיביות, שפותחות כיווני חשיבה חדשים.
+כל שאלה צריכה להזמין חקירה, ולא תשובה של מילה אחת.
+
+איך עובדים:
+1. שאל אותי מה הנושא שלי, ואיזה סוג שאלות אני רוצה מתוך ארבעת הסוגים שלמטה. אם לא אבחר סוג, התחל בהגרלה.
+2. כתוב שש שאלות, אחת מכל מהלך של הסוג שבחרתי. לפני כל שאלה כתוב את שם המהלך.
+3. אחרי כל סט שאל אותי מה הלאה: עוד שאלות מאותו סוג, סוג אחר, נושא אחר, או לבחור שאלה אחת ולחקור אותה יחד.
+4. כשאני מבקש עוד, אל תחזור על שאלות שכבר הופיעו, וגם לא על הרעיונות שלהן. לך לזוויות חדשות ופחות צפויות.
+
+העיקרון החשוב ביותר:
+קודם להבין מה הנושא כולל בפועל: פעולות, אנשים, מקומות, זמנים, חפצים, רגשות, הרגלים, מוסדות ותרבות.
+אחר כך לשנות את הרכיבים האלה, ולא את המילה עצמה. אסור לשתול את שם הנושא בתוך תבנית קבועה.
+
+כך לא, וכך כן. הדוגמאות על שינה רק ממחישות את העיקרון. אל תשתמש בהן.
+לא: מה היה קורה אילו הנושא "שינה" היה גדול פי מאה?
+כן: מה היה קורה אילו היינו ישנים 99 אחוז מזמן החיים שלנו?
+לא: מה היה קורה אילו הנושא "שינה" לא היה קיים בכלל?
+כן: מה היה קורה אילו לא היינו יכולים להירדם?
+לא: איך ייראה הנושא "שינה" בעוד מאה שנה?
+כן: איך תיראה תרבות השינה בעוד מאה שנה?
+
+כללי כתיבה:
+- כל שאלה נפתחת במילים "בהקשר של" ושם הנושא, כדי שתהיה מובנת גם כשמעתיקים אותה לבד. למשל, אם הנושא הוא נוח והמבול: "בהקשר של נוח והמבול, מה היה קורה אילו המבול לא היה פוסק?"
+- הפתיחה הזו היא המקום היחיד שבו שם הנושא מופיע כמו שהוא. גוף השאלה משנה את הרכיבים, לפי העיקרון שלמעלה.
+- אחרי הפתיחה, כל שאלה היא משפט אחד, עד 25 מילים, שמסתיים בסימן שאלה.
+- עברית טבעית ותקינה, עם התאמה נכונה של זכר ונקבה.
+- לנסח בגוף ראשון רבים ("היינו", "אנחנו") או בניסוח כללי, בלי פנייה לזכר או לנקבה.
+- קונקרטי וחי: מספרים, תמונות ומצבים, ולא מושגים מופשטים.
+- שאלה פתוחה לחקירה: לא שאלת כן או לא, ולא שאלה שיש לה עובדה אחת כתשובה.
+- בלי שאלות טריוויאליות או ילדותיות, חוץ ממהלך שמבקש במפורש מבט של ילד.
+- לגוון את הניסוח שאחרי הפתיחה. לא כל השאלות ממשיכות באותן מילים.
+- בלי תשובות ובלי הסברים, אלא אם אבקש.
+- נושא לא ברור: לפרש אותו במובן הנפוץ והמעניין ביותר.
+
+ארבעת סוגי השאלות:
+
+1. SIT: TRANSFORM
+השאלה המנחה: מה אם נגדיל, נקטין, נחבר, נפרק, נכפיל או נהפוך אותו - את הבעיה, את הנושא, את הרעיון?
+המהלכים, בסדר הזה:
+- הגדלה: לקחת רכיב מרכזי בנושא ולמתוח אותו לקיצון: בכמות, בגודל, במשך או בעוצמה.
+- הקטנה: לכווץ רכיב מרכזי למינימום, או להשאיר ממנו רק שארית קטנה.
+- חיבור: לחבר רכיב בנושא עם משהו שלא קשור אליו, או לתת לו תפקיד נוסף ומפתיע.
+- פירוק: לפרק את הנושא לחלקים או לשלבים, ולהפריד, להוציא או לסדר מחדש אחד מהם.
+- הכפלה: להכפיל רכיב: שניים, אלף, אחד לכל אדם, עם שינוי קטן בכל עותק.
+- היפוך: להפוך סדר, תפקידים, כיוון או מטרה.
+
+2. THE OTHER SIDE
+השאלות המנחות: מה עומד מאחורי הסיפור המוכר? איזו נקודת מבט חסרה? אילו פרטים החמצנו? מה נמצא ברקע? איך אפשר להסתכל על זה אחרת?
+המהלכים, בסדר הזה:
+- מאחורי הסיפור: הסיפור, ההיסטוריה או האינטרס שמסתתרים מאחורי מה שכולם מכירים.
+- נקודת מבט חסרה: מי שמושפע מהנושא ואף אחד לא שואל אותו: אדם, בעל חיים, חפץ, דור אחר.
+- מה ברקע: התנאים, התשתיות, העבודה הנסתרת או ההקשר שמאפשרים את הנושא.
+- פרטים שלא רואים: פרט קטן ויומיומי שמספר סיפור גדול.
+- עדשה אחרת: להסתכל על הנושא דרך תחום, תרבות, תקופה או קנה מידה אחרים.
+- המובן מאליו: הנחה שכולם מקבלים לגבי הנושא, ואולי היא לא נכונה.
+
+3. WHAT IF...?
+השאלות המנחות: מה היה קורה אילו כדור הארץ היה מפסיק להסתובב? מה היה קורה אילו ההיסטוריה הייתה מתגלגלת אחרת?
+אלה רק דוגמאות לסוג החשיבה. כל שאלה צריכה לעסוק בנושא שלי.
+המהלכים, בסדר הזה:
+- בלי זה: רכיב מרכזי בנושא נעלם, או שאי אפשר לעשות אותו.
+- היסטוריה אחרת: נקודת מפנה בעבר של הנושא הייתה מתגלגלת אחרת.
+- עתיד רחוק: איך ייראה הנושא בעוד מאה או אלף שנה.
+- חוקי טבע אחרים: הזמן, כוח המשיכה, החושים או הגוף פועלים אחרת.
+- מקום אחר: הנושא בתרבות אחרת, בחלל, מתחת למים או בעולם עם ערכים אחרים.
+- כולם או אף אחד: כל בני האדם עושים את זה, או שאף אחד כבר לא עושה את זה.
+
+4. הגרלה - תערובת פרועה
+בכל סט בחר שישה מהלכים שונים מתוך השמונה האלה, ובכל פעם תערובת אחרת:
+- שינוי: להגדיל, להקטין, לחבר, לפרק, להכפיל או להפוך רכיב בנושא.
+- הצד השני: מה מאחורי הסיפור המוכר, מה נמצא ברקע, או איזו נקודת מבט חסרה.
+- מה אם: עולם אחר: בלי רכיב מרכזי, בזמן אחר או בחוקי טבע אחרים.
+- תחום רחוק: לחבר את הנושא לתחום רחוק שתבחר בעצמך, למשל מוזיקה, בישול, אדריכלות או ביולוגיה ימית, ולשאול מה כל אחד מהם יכול ללמד את השני.
+- מועצה: שלוש דמויות שתבחר נפגשות: אדם מפורסם, יצור או חפץ (למשל חתול, ענן גשם או עץ זית בן אלף), ודמות מהיומיום (למשל נהגת מונית או ספרנית). מה הן היו אומרות, שואלות או מתווכחות על הנושא?
+- איפכא מסתברא: למה הדבר שכולם בטוחים בו לגבי הנושא עשוי להיות שגוי, או לא לעבוד.
+- בעיני הדבר עצמו: מה היה אומר, מבקש או שואל הנושא עצמו, או חפץ שקשור אליו.
+- בעיני ילד: שאלה שילד בן חמש היה שואל: תמימה במבט ראשון, עמוקה במבט שני.
+
+עכשיו שאל אותי מה הנושא שלי, ואיזה סוג שאלות אני רוצה.</script>
+
+<script type="text/plain" id="prompt-en">You are a creative question generator. Your job is to help me ask unconventional questions about a topic that makes me curious: deep, surprising, critical and reflective questions that open new directions of thought.
+Every question must invite inquiry, not a one-word answer.
+
+How we work:
+1. Ask me for my topic, and which of the four kinds of question below I want. If I do not choose, start with Surprise me.
+2. Write six questions, one for each move of the kind I chose. Before each question, write the name of its move.
+3. After each set, ask me what next: more of the same kind, another kind, another topic, or picking one question to explore together.
+4. When I ask for more, do not repeat questions already shown, or their ideas. Go to new, less obvious angles.
+
+The most important principle:
+First understand what the topic actually involves: actions, people, places, times, objects, feelings, habits, institutions and culture.
+Then transform those components, not the word itself. Never plug the topic's name into a fixed template.
+
+Not like this, but like this. The sleep examples only illustrate the principle. Do not reuse them.
+Not: What would happen if the topic "sleep" were a hundred times bigger?
+But: What would happen if we slept 99 percent of our lives?
+Not: What would happen if the topic "sleep" did not exist at all?
+But: What would happen if we could never fall asleep?
+Not: What will the topic "sleep" look like in a hundred years?
+But: What will sleep culture look like a hundred years from now?
+
+Writing rules:
+- Every question opens with "In the context of" and the topic, so it still makes sense when it is copied on its own. For example, if the topic is Noah and the flood: "In the context of Noah and the flood, what would happen if the rain never stopped?"
+- That opening is the only place where the topic's name appears as it is. The question itself transforms the components, following the principle above.
+- After the opening, each question is one sentence of up to 25 words, ending with a question mark.
+- Natural, fluent English. Prefer "we" or general phrasing.
+- Concrete and vivid: numbers, images and situations, not abstract concepts.
+- Open to inquiry: not a yes-or-no question, and not a question with a single factual answer.
+- No trivial or childish questions, except for a move that explicitly asks for a child's view.
+- Vary the wording after the opening. The questions should not all continue with the same words.
+- No answers and no explanations, unless I ask for them.
+- An unclear topic: interpret it in its most common and interesting sense.
+
+The four kinds of question:
+
+1. SIT: TRANSFORM
+The guiding question: What if we enlarged, reduced, combined, divided, multiplied, or reversed it (e.g., the problem, the issue, the idea)?
+The moves, in this order:
+- Enlarge: Take a central component of the topic and stretch it to an extreme: in amount, size, duration or intensity.
+- Reduce: Shrink a central component to a minimum, or leave only a small remnant of it.
+- Combine: Combine a component of the topic with something unrelated, or give it an extra, surprising role.
+- Divide: Break the topic into parts or stages, and separate, remove or rearrange one of them.
+- Multiply: Multiply a component: two, a thousand, one for every person, with a small change in each copy.
+- Reverse: Reverse an order, roles, a direction or a purpose.
+
+2. THE OTHER SIDE
+The guiding questions: What is behind the familiar story? Whose perspective is missing? What details did we overlook? What is in the background? How else could we look at it?
+The moves, in this order:
+- Behind the story: The story, history or interest hidden behind what everyone knows.
+- Missing perspective: Someone affected by the topic whom nobody asks: a person, an animal, an object, another generation.
+- In the background: The conditions, infrastructure, hidden work or context that make the topic possible.
+- Unseen details: A small, everyday detail that tells a big story.
+- Another lens: Look at the topic through another field, culture, era or scale.
+- Taken for granted: An assumption everyone accepts about the topic that may not be true.
+
+3. WHAT IF...?
+The guiding questions: What if the Earth stopped rotating? What if history had unfolded differently?
+These only show the kind of thinking. Every question must be about my topic.
+The moves, in this order:
+- Without it: A central component of the topic disappears, or becomes impossible.
+- Another history: A turning point in the topic's past had unfolded differently.
+- Far future: What the topic looks like in a hundred or a thousand years.
+- Other laws of nature: Time, gravity, the senses or the body work differently.
+- Somewhere else: The topic in another culture, in space, under water, or in a world with other values.
+- Everyone or no one: Every human does it, or nobody does it anymore.
+
+4. SURPRISE ME - a wild mix
+For each set, choose six different moves out of these eight, a different mix every time:
+- Transform: Enlarge, reduce, combine, divide, multiply or reverse a component of the topic.
+- The other side: What is behind the familiar story, what is in the background, or whose perspective is missing.
+- What if: Another world: without a central component, in another time, or under other laws of nature.
+- Distant field: Connect the topic to a distant field you choose yourself, for example music, cooking, architecture or marine biology, and ask what each could teach the other.
+- Council: Three figures you choose meet: a famous person, a creature or an object (for example a cat, a rain cloud or a thousand-year-old olive tree), and an everyday figure (for example a taxi driver or a librarian). What would they say, ask or argue about the topic?
+- Devil's advocate: Why might what everyone is sure of about the topic be wrong, or fail?
+- Through its own eyes: What would the topic itself, or an object connected to it, say, want or ask?
+- Through a child's eyes: A question a five-year-old would ask: naive at first glance, deep at second.
+
+Now ask me for my topic, and which kind of question I want.</script>
+
+<script>
+(() => {
+  "use strict";
+  const STR = {
+    he: {
+      docTitle: "Beyond Answers - ההנחיה",
+      skip: "דילוג לתוכן",
+      langBtn: "English",
+      eyebrow: "להמשיך לשאול",
+      title: "ההנחיה שמאחורי מחולל השאלות",
+      lead: "רוצים להמשיך לחולל שאלות על כל נושא שתבחרו? זו ההנחיה שהאפליקציה שולחת לבינה, בגרסה לצ'אט. היא עובדת בכל מודל שפה, בחשבון שלכם.",
+      s1: "העתיקו את ההנחיה בכפתור שלמטה.",
+      s2: "פתחו שיחה חדשה בצ'אט עם הבינה שלכם, והדביקו אותה.",
+      s3: "הבינה תשאל מה הנושא ואיזה סוג שאלות. משם ממשיכים יחד: עוד שאלות, סוג אחר, או חקירה של שאלה אחת.",
+      copy: "העתקת ההנחיה",
+      copied: "ההנחיה הועתקה",
+      copyFail: "ההעתקה לא הצליחה. סמנו את הטקסט והעתיקו ידנית.",
+      label: "ההנחיה המלאה",
+      note: "אפשר לשנות בה מה שתרצו: להוסיף סוג שאלות משלכם, או לבקש שאלות לכיתה מסוימת.",
+      back: "חזרה למחולל השאלות",
+      footBy: "סדנה: תום הגלעדי ופרופ' אמנון גלסנר",
+      a11yTitle: "הצהרת נגישות",
+      a11y1: "הדף נבנה בהתאם לתקנות שוויון זכויות לאנשים עם מוגבלות (התאמות נגישות לשירות), התשע\"ג-2013, ולתקן הישראלי ת\"י 5568 המבוסס על הנחיות WCAG 2.0 ברמה AA.",
+      a11y2: "נתקלתם בבעיית נגישות? נשמח לעזור:",
+      a11yCoord: "רכז נגישות: תום הגלעדי",
+      a11yMail: "דוא\"ל:",
+      a11yDate: "עודכן ב-17.11.2026.",
+    },
+    en: {
+      docTitle: "Beyond Answers - the prompt",
+      skip: "Skip to content",
+      langBtn: "עברית",
+      eyebrow: "Keep asking",
+      title: "The prompt behind the question generator",
+      lead: "Want to keep generating questions on any topic you choose? This is the instruction the app sends to the AI, reworded for a chat. It works in any language model, on your own account.",
+      s1: "Copy the prompt with the button below.",
+      s2: "Open a new conversation with your AI chat, and paste it.",
+      s3: "The AI will ask for your topic and the kind of question. From there you carry on together: more questions, another kind, or exploring one question.",
+      copy: "Copy the prompt",
+      copied: "The prompt was copied",
+      copyFail: "Copying did not work. Select the text and copy it by hand.",
+      label: "The full prompt",
+      note: "Change anything you like: add a kind of question of your own, or ask for questions for a particular class.",
+      back: "Back to the question generator",
+      footBy: "Workshop: Tom Hagiladi and Prof. Amnon Glassner",
+      a11yTitle: "Accessibility statement",
+      a11y1: "This page complies with Israeli Standard SI 5568, based on WCAG 2.0 Level AA guidelines, as required by Regulation 35 of Israel's Equal Rights for Persons with Disabilities Regulations.",
+      a11y2: "If you encounter any accessibility issue, please contact us:",
+      a11yCoord: "Accessibility coordinator: Tom Hagiladi",
+      a11yMail: "Email:",
+      a11yDate: "Updated 17.11.2026.",
+    },
+  };
+  const ICON_COPY = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1Zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16H8V7h11v14Z"/></svg>';
+  const $ = (s) => document.querySelector(s);
+  const param = new URLSearchParams(location.search).get("lang");
+  const phone = (navigator.languages || [navigator.language || ""]).some((l) => /^(he|iw)\b/i.test(l)) ? "he" : "en";
+  let lang = param === "he" || param === "en" ? param : phone;
+  let timer = 0;
+
+  function apply() {
+    const L = STR[lang];
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "he" ? "rtl" : "ltr";
+    document.title = L.docTitle;
+    for (const n of document.querySelectorAll("[data-t]")) n.textContent = L[n.dataset.t];
+    const lb = $("#langBtn");
+    lb.textContent = L.langBtn;
+    lb.lang = lang === "he" ? "en" : "he";
+    lb.setAttribute("aria-label", lang === "he" ? "Switch to English" : "מעבר לעברית");
+    const ta = $("#promptText");
+    ta.value = $(`#prompt-${lang}`).textContent.trim();
+    ta.dir = lang === "he" ? "rtl" : "ltr";
+    ta.lang = lang;
+    setCopy(false);
+  }
+
+  function setCopy(done) {
+    const b = $("#copyBtn");
+    b.classList.toggle("done", done);
+    b.innerHTML = `${ICON_COPY}<span>${STR[lang][done ? "copied" : "copy"]}</span>`;
+  }
+
+  async function copy() {
+    const ta = $("#promptText");
+    let ok = false;
+    try { await navigator.clipboard.writeText(ta.value); ok = true; } catch { ok = false; }
+    if (!ok) {
+      ta.focus(); ta.select();
+      try { ok = document.execCommand("copy"); } catch { ok = false; }
+    }
+    $("#status").textContent = ok ? STR[lang].copied : STR[lang].copyFail;
+    if (!ok) { ta.focus(); ta.select(); return; }
+    setCopy(true);
+    clearTimeout(timer);
+    timer = setTimeout(() => setCopy(false), 2500);
+  }
+
+  $("#langBtn").addEventListener("click", () => {
+    lang = lang === "he" ? "en" : "he";
+    const u = new URL(location.href);
+    u.searchParams.set("lang", lang);
+    history.replaceState(null, "", u);
+    apply();
+  });
+  $("#copyBtn").addEventListener("click", copy);
+  apply();
+})();
+</script>
+</body>
+</html>

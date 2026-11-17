@@ -201,6 +201,9 @@
   footer p { margin: 0 0 .5rem; }
   body.on-welcome footer { border-top-color: var(--ring); color: var(--mist); }
   body.on-welcome footer .linkbtn { color: #fff; }
+  footer .takehome { display: inline-flex; align-items: center; min-height: 44px; color: var(--navy); font-weight: 700; text-underline-offset: 3px; }
+  body.on-welcome footer .takehome { color: #fff; }
+  body.on-welcome footer .takehome:focus-visible { outline-color: var(--focus-dark); }
   .accessibility-statement { background: var(--card); color: var(--navy); border: 1px solid var(--line); border-radius: var(--radius); padding: .5rem 1rem; margin: .75rem 0; }
   .accessibility-statement summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; }
   .accessibility-statement a { color: var(--navy); }
@@ -315,6 +318,7 @@
 <footer>
   <div class="inner">
     <p data-t="footBy"></p>
+    <p><a class="takehome" id="takeHome" href="prompt.html" data-t="takeHome"></a></p>
     <details class="accessibility-statement">
       <summary data-t="a11yTitle"></summary>
       <p data-t="a11y1"></p>
@@ -404,6 +408,7 @@
     removeAria: "הסרת השאלה מהרשימה: {q}",
     back: "חזרה למחולל",
     footBy: "סדנה: תום הגלעדי ופרופ' אמנון גלסנר",
+    takeHome: "להמשיך לשאול בבית: ההנחיה המלאה לצ'אט שלכם",
     reset: "ניקוי והתחלה מחדש",
     resetConfirm: "למחוק מהטלפון את הנושא, השמות והשאלות שהעתקתם?",
     a11yTitle: "הצהרת נגישות",
@@ -412,7 +417,7 @@
     a11yCoord: "רכז נגישות: תום הגלעדי",
     a11yMail: "דוא\"ל:",
     a11yDate: "עודכן ב-25.10.2026.",
-    backupPrompt: "אנחנו בסדנה על שאילת שאלות לא קונבנציונליות.\nהנושא שלנו: {topic}\nכתוב לנו שש שאלות יצירתיות מהסוג הזה:\n{label}\n{sub}\nחשוב: קודם תבין מה הנושא כולל בפועל - פעולות, אנשים, מקומות, זמנים, רגשות וחפצים - ושנה את הרכיבים האלה, ולא את המילה עצמה.\nלמשל, על שינה: לא \"מה אם השינה הייתה גדולה פי מאה?\", אלא \"מה היה קורה אילו היינו ישנים 99 אחוז מזמן החיים שלנו?\"\nכל שאלה משפט אחד, בלי תשובות.",
+    backupPrompt: "אנחנו בסדנה על שאילת שאלות לא קונבנציונליות.\nהנושא שלנו: {topic}\nכתוב לנו שש שאלות יצירתיות מהסוג הזה:\n{label}\n{sub}\nחשוב: קודם תבין מה הנושא כולל בפועל - פעולות, אנשים, מקומות, זמנים, רגשות וחפצים - ושנה את הרכיבים האלה, ולא את המילה עצמה.\nלמשל, על שינה: לא \"מה אם השינה הייתה גדולה פי מאה?\", אלא \"מה היה קורה אילו היינו ישנים 99 אחוז מזמן החיים שלנו?\"\nכל שאלה נפתחת במילים \"בהקשר של {topic},\" וממשיכה במשפט אחד, בלי תשובות.",
     and: "ו",
   };
 
@@ -479,6 +484,7 @@
     removeAria: "Remove from the list: {q}",
     back: "Back to the generator",
     footBy: "Workshop: Tom Hagiladi and Prof. Amnon Glassner",
+    takeHome: "Keep asking at home: the full prompt for your own AI chat",
     reset: "Clear and start over",
     resetConfirm: "Delete the topic, the names and your copied questions from this phone?",
     a11yTitle: "Accessibility statement",
@@ -487,7 +493,7 @@
     a11yCoord: "Accessibility coordinator: Tom Hagiladi",
     a11yMail: "Email:",
     a11yDate: "Updated 25.10.2026.",
-    backupPrompt: "We are in a workshop on asking unconventional questions.\nOur topic: {topic}\nWrite us six creative questions of this kind:\n{label}\n{sub}\nImportant: first understand what the topic actually involves - actions, people, places, times, feelings and objects - and transform those components, not the word itself.\nFor example, about sleep: not \"What if sleep were a hundred times bigger?\" but \"What would happen if we slept 99 percent of our lives?\"\nEach question is one sentence, with no answers.",
+    backupPrompt: "We are in a workshop on asking unconventional questions.\nOur topic: {topic}\nWrite us six creative questions of this kind:\n{label}\n{sub}\nImportant: first understand what the topic actually involves - actions, people, places, times, feelings and objects - and transform those components, not the word itself.\nFor example, about sleep: not \"What if sleep were a hundred times bigger?\" but \"What would happen if we slept 99 percent of our lives?\"\nEach question opens with \"In the context of {topic},\" and goes on in one sentence, with no answers.",
     and: " and ",
   };
 
@@ -658,6 +664,7 @@
     for (const n of document.querySelectorAll("[data-t]")) n.textContent = L[n.dataset.t];
     for (const n of document.querySelectorAll("[data-tp]")) n.placeholder = L[n.dataset.tp];
     for (const n of document.querySelectorAll("[data-talt]")) n.alt = L[n.dataset.talt];
+    $("#takeHome").href = `prompt.html?lang=${S.lang}`;
     const lb = $("#langBtn");
     lb.textContent = L.langBtn;
     lb.lang = S.lang === "he" ? "en" : "he";
