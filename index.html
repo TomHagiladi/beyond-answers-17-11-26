@@ -64,7 +64,13 @@
   .testbar { background: #fff1bf; color: #4d3a00; text-align: center; padding: .5rem 1rem; font-size: .9rem; font-weight: 500; }
 
   .band { background: var(--panel); color: #fff; display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); padding: .75rem 1rem; }
-  .band .logo { height: 40px; width: auto; display: block; }
+  /* Tom, 17.11.2026: the two names in place of the Levinsky-Wingate logo */
+  .band .names { margin: 0; font-weight: 700; font-size: .95rem; line-height: 1.3; letter-spacing: .01em; }
+  .band .names .sep { color: var(--coral); margin: 0 .2rem; }
+  .band .names span { white-space: nowrap; }
+  /* on a phone the English names do not fit one line: one name per line instead of a break mid-name */
+  @media (max-width: 359px) { .band .names .sep { display: none; } .band .names span { display: block; } }
+  @media (max-width: 479px) { html[lang="en"] .band .names .sep { display: none; } html[lang="en"] .band .names span { display: block; } }
   .langbtn { background: transparent; color: #fff; border: 1.5px solid rgba(255, 255, 255, .75); border-radius: 999px; min-height: 44px; padding: .35rem 1rem; font-weight: 500; }
   .langbtn:hover { background: rgba(255, 255, 255, .14); }
   .langbtn:focus-visible { outline-color: var(--focus-dark); }
@@ -209,7 +215,7 @@
   .accessibility-statement a { color: var(--navy); }
 
   @media (max-width: 359px) { .tags { grid-template-columns: 1fr; } .seg { grid-template-columns: 1fr; } }
-  @media (min-width: 480px) { main { padding-top: 1.75rem; } .band .logo { height: 46px; } .tag-label { font-size: .92rem; letter-spacing: .07em; } }
+  @media (min-width: 480px) { main { padding-top: 1.75rem; } .band .names { font-size: 1.05rem; } .tag-label { font-size: .92rem; letter-spacing: .07em; } }
   @media (min-width: 768px) { main { padding: 2.25rem 1.5rem 3rem; } .hero h1 { font-size: 3.6rem; } .tag { min-height: 104px; padding: 1rem 1.1rem; } }
   @media (min-width: 1024px) { main, footer .inner { max-width: 680px; } }
   @media (prefers-reduced-motion: reduce) {
@@ -224,7 +230,7 @@
 <div class="testbar" id="testbar" role="note" hidden></div>
 
 <header class="band">
-  <img class="logo" src="logo-levinsky-white.png" width="527" height="160" alt="" data-talt="logoAlt">
+  <p class="names"><span data-t="bandName1"></span> <span class="sep" aria-hidden="true">·</span> <span data-t="bandName2"></span></p>
   <button type="button" class="langbtn" id="langBtn"></button>
 </header>
 
@@ -347,7 +353,8 @@
 
   const HE = {
     skip: "דלג לתוכן הראשי",
-    logoAlt: "המרכז האקדמי לוינסקי-וינגייט",
+    bandName1: "תום הגלעדי",
+    bandName2: "פרופ' אמנון גלסנר",
     docTitle: "מעבר לתשובות - מחולל שאלות",
     langBtn: "English",
     testbar: "מצב בדיקה: שאלות לדוגמה קבועות, לא מהמודל.",
@@ -423,7 +430,8 @@
 
   const EN = {
     skip: "Skip to main content",
-    logoAlt: "Levinsky-Wingate Academic College",
+    bandName1: "Tom Hagiladi",
+    bandName2: "Prof. Amnon Glassner",
     docTitle: "Beyond Answers - a question generator",
     langBtn: "עברית",
     testbar: "Test mode: fixed sample questions, not from the model.",
